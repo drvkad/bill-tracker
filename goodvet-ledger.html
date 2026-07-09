@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>GoodVet — Case Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1E241F;
+  --paper:#F6F4EE;
+  --deep:#33473F;
+  --deep-2:#25352E;
+  --mint:#DCE6DE;
+  --mint-line:#C6D5C9;
+  --amber:#A9702F;
+  --amber-bg:#F5E7D3;
+  --red:#A83A32;
+  --red-bg:#F5DEDA;
+  --line:#DAD5C7;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:48px}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* HEADER */
+.hdr{background:var(--deep-2);color:#fff;padding:18px 20px 16px}
+.hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.hdr-title{font-family:'Source Serif 4',serif;font-size:20px;font-weight:700;letter-spacing:.01em}
+.hdr-sub{font-size:11px;color:#9DB0A3;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.save-pill{display:flex;align-items:center;gap:6px;font-size:11px;padding:6px 10px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);white-space:nowrap}
+.save-dot{width:7px;height:7px;border-radius:50%;background:#6FBF8C;flex-shrink:0}
+.save-dot.saving{background:#E0B559;animation:pulse 1s infinite}
+.save-dot.err{background:#D96A5E}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.save-txt{font-family:'JetBrains Mono',monospace;color:#CFE0D4}
+
+/* DATA BAR */
+.dbar{background:var(--deep);padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dbar-msg{color:#DCEAE0;font-size:11.5px;flex:1;min-width:160px}
+.dbar-btns{display:flex;gap:8px;flex-wrap:wrap}
+.dbar-btns button,.dbar-btns label{padding:8px 13px;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif}
+.btn-json{background:#4A7A63;color:#fff}
+.btn-csv{background:#5E8F6E;color:#fff}
+.btn-restore{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25)!important}
+.btn-verify{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25)!important}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px 16px 0}
+.stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:13px 8px;text-align:center}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;margin-bottom:2px}
+.stat-lbl{font-size:9.5px;color:#8C8878;text-transform:uppercase;letter-spacing:.05em}
+
+/* CARD / FORM */
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 16px 0}
+.card-title{font-family:'Source Serif 4',serif;font-size:15px;font-weight:700;color:var(--deep-2);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--mint-line)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:10.5px;font-weight:600;color:#8C8878;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;font-family:'Inter',sans-serif;font-size:16px;padding:12px 13px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--deep)}
+.field .mono-input{font-family:'JetBrains Mono',monospace}
+.calc-total{background:var(--mint);border:1px dashed #9BB6A2;border-radius:8px;padding:12px 13px;font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--deep-2)}
+
+.btn-primary{width:100%;background:var(--deep);color:#fff;border:none;border-radius:9px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px;font-family:'Inter',sans-serif}
+.btn-secondary{width:100%;background:var(--mint);color:var(--deep-2);border:1px solid var(--mint-line);border-radius:9px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px;font-family:'Inter',sans-serif}
+.btn-danger{width:100%;background:var(--red);color:#fff;border:none;border-radius:9px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;font-family:'Inter',sans-serif}
+.btn-back{background:none;border:none;color:#B7C4BB;font-size:15px;cursor:pointer;padding:0}
+
+.sub-hdr{background:var(--deep-2);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:16px}
+.sub-hdr-title{font-family:'Source Serif 4',serif;font-size:16px;font-weight:700}
+
+/* MONTHLY SUMMARY */
+.month-summary{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin:10px 16px 0}
+.month-summary-title{font-family:'Source Serif 4',serif;font-size:14px;font-weight:700;color:var(--deep-2);margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--mint-line)}
+.month-row{padding:8px 0;border-bottom:1px solid #F0EEE5}
+.month-row:last-child{border-bottom:none}
+.month-row-hdr{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:13.5px;margin-bottom:6px}
+.month-row-hdr .mcount{font-weight:500;color:#8C8878;font-size:11.5px;font-family:'JetBrains Mono',monospace}
+.month-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12.5px}
+.month-cols div span{display:block;font-family:'Inter',sans-serif;font-size:9.5px;color:#8C8878;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+
+/* LEDGER ROWS */
+.filters{display:flex;gap:8px;padding:14px 16px 0;flex-wrap:wrap}
+.f-btn{font-size:13px;padding:7px 15px;border-radius:20px;border:1px solid var(--line);background:#fff;cursor:pointer;font-family:'Inter',sans-serif}
+.f-btn.active{background:var(--deep-2);color:#fff;border-color:var(--deep-2)}
+
+.ledger-head{display:grid;grid-template-columns:1fr;padding:10px 16px 4px;font-size:10px;color:#8C8878;text-transform:uppercase;letter-spacing:.05em}
+.entry{background:#fff;border:1px solid var(--line);border-radius:11px;padding:14px 16px;margin:10px 16px 0}
+.entry-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+.entry-name{font-weight:700;font-size:15.5px}
+.entry-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:#8C8878;margin-top:2px}
+.entry-total{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px;color:var(--deep-2);white-space:nowrap}
+.entry-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12.5px;color:#5B5748;margin:8px 0;font-family:'JetBrains Mono',monospace}
+.entry-meta span.lbl{color:#8C8878;font-family:'Inter',sans-serif;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:1px}
+.entry-share{font-size:12.5px;color:#5B5748;font-style:italic;padding-top:6px;border-top:1px solid #F0EEE5;margin-top:6px}
+.edit-btn{background:var(--mint);border:1px solid var(--mint-line);border-radius:7px;padding:8px 16px;font-size:13px;cursor:pointer;font-weight:600;font-family:'Inter',sans-serif;margin-top:10px}
+
+.error-box{background:var(--red-bg);color:var(--red);border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.empty{text-align:center;padding:56px 20px;color:#A8A390;font-size:14.5px}
+.empty-sig{font-family:'JetBrains Mono',monospace;font-size:26px;color:#C6D5C9;margin-bottom:10px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--deep-2);color:#fff;padding:12px 22px;border-radius:8px;font-size:13px;font-weight:600;z-index:999;transition:transform .3s;white-space:nowrap;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.screen{display:none}
+.screen.active{display:block}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── HOME ── -->
+<div class="screen active" id="screen-home">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div>
+        <div class="hdr-title">GoodVet Case Ledger</div>
+        <div class="hdr-sub">Billing record</div>
+      </div>
+      <div class="save-pill">
+        <span class="save-dot" id="save-dot"></span>
+        <span class="save-txt mono" id="save-txt">loading…</span>
+      </div>
+    </div>
+  </div>
+  <div class="dbar">
+    <div class="dbar-msg">Stored locally in this browser via localStorage. Back up regularly — this is your tax record.</div>
+    <div class="dbar-btns">
+      <button class="btn-json" onclick="exportJSON()">⬇ Backup JSON</button>
+      <button class="btn-csv" onclick="exportCSV()">⬇ Export CSV</button>
+      <label class="btn-restore">⬆ Restore<input type="file" accept=".json" style="display:none" onchange="importJSON(event)"></label>
+      <button class="btn-verify" onclick="verifyStorage()">✓ Verify Save</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="stat-count">0</div><div class="stat-lbl">Cases</div></div>
+    <div class="stat"><div class="stat-num" id="stat-total">₹0</div><div class="stat-lbl">Total Billed</div></div>
+    <div class="stat"><div class="stat-num" id="stat-taxable">₹0</div><div class="stat-lbl">Taxable Vol.</div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div id="backup-reminder" style="font-size:12.5px;color:#8C8878;margin-bottom:10px;text-align:center"></div>
+    <button class="btn-primary" onclick="goTo('add')">＋ Add Case</button>
+    <button class="btn-secondary" onclick="goTo('list')">🗂 View Ledger</button>
+  </div>
+</div>
+
+<!-- ── ADD ── -->
+<div class="screen" id="screen-add">
+  <div class="sub-hdr">
+    <button class="btn-back" onclick="goTo('home')">← Back</button>
+    <span class="sub-hdr-title">Add Case</span>
+  </div>
+  <div class="card">
+    <div class="error-box" id="add-error" style="display:none"></div>
+    <div class="card-title">Case Entry</div>
+    <div class="field"><label>Date</label><input id="f-date" type="date"></div>
+    <div class="field"><label>Name</label><input id="f-name" type="text" placeholder="Client / patient name"></div>
+    <div class="grid2">
+      <div class="field"><label>ID</label><input id="f-id" type="text" class="mono-input" placeholder="Case / patient ID"></div>
+      <div class="field"><label>Inv No.</label><input id="f-inv" type="text" class="mono-input" placeholder="Invoice no."></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Taxable Volume (₹)</label><input id="f-tax" type="number" class="mono-input" inputmode="decimal" placeholder="0.00" oninput="calcTotal('f')"></div>
+      <div class="field"><label>Non-taxable (₹)</label><input id="f-nontax" type="number" class="mono-input" inputmode="decimal" placeholder="0.00" oninput="calcTotal('f')"></div>
+    </div>
+    <div class="field"><label>Total (₹)</label><div class="calc-total" id="f-total-display">₹0.00</div></div>
+    <div class="field"><label>Share (₹)</label><input id="f-share" type="number" class="mono-input" inputmode="decimal" placeholder="0.00"></div>
+    <button class="btn-primary" onclick="saveCase()">💾 Save Case</button>
+  </div>
+</div>
+
+<!-- ── LIST ── -->
+<div class="screen" id="screen-list">
+  <div class="sub-hdr">
+    <button class="btn-back" onclick="goTo('home')">← Back</button>
+    <span class="sub-hdr-title" id="list-title">Ledger</span>
+  </div>
+  <div id="monthly-summary"></div>
+  <div class="filters">
+    <button class="f-btn active" onclick="setSort('date',this)">Newest</button>
+    <button class="f-btn" onclick="setSort('name',this)">By Name</button>
+    <button class="f-btn" onclick="setSort('total',this)">By Total</button>
+  </div>
+  <div id="entries-list"></div>
+</div>
+
+<!-- ── EDIT ── -->
+<div class="screen" id="screen-edit">
+  <div class="sub-hdr">
+    <button class="btn-back" onclick="goTo('list')">← Back</button>
+    <span class="sub-hdr-title">Edit Case</span>
+  </div>
+  <div class="card">
+    <div class="card-title">Case Entry</div>
+    <div class="field"><label>Date</label><input id="e-date" type="date"></div>
+    <div class="field"><label>Name</label><input id="e-name" type="text"></div>
+    <div class="grid2">
+      <div class="field"><label>ID</label><input id="e-id" type="text" class="mono-input"></div>
+      <div class="field"><label>Inv No.</label><input id="e-inv" type="text" class="mono-input"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Taxable Volume (₹)</label><input id="e-tax" type="number" class="mono-input" inputmode="decimal" oninput="calcTotal('e')"></div>
+      <div class="field"><label>Non-taxable (₹)</label><input id="e-nontax" type="number" class="mono-input" inputmode="decimal" oninput="calcTotal('e')"></div>
+    </div>
+    <div class="field"><label>Total (₹)</label><div class="calc-total" id="e-total-display">₹0.00</div></div>
+    <div class="field"><label>Share (₹)</label><input id="e-share" type="number" class="mono-input" inputmode="decimal"></div>
+    <input type="hidden" id="e-key">
+    <button class="btn-primary" onclick="saveEdit()">💾 Save Changes</button>
+    <button class="btn-danger" onclick="deleteCase()">🗑 Delete Case</button>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = "goodvet_cases_v1";
+let cases = [];   // { key, date, name, id, inv, tax, nontax, total, share }
+let currentSort = "date";
+let storageReady = false;
+
+function setSaveState(state, msg){
+  const dot = document.getElementById("save-dot");
+  const txt = document.getElementById("save-txt");
+  dot.classList.remove("saving","err");
+  if(state==="saving") dot.classList.add("saving");
+  if(state==="err") dot.classList.add("err");
+  txt.textContent = msg;
+}
+
+function fmtAmt(n){ return "₹" + (parseFloat(n)||0).toLocaleString("en-IN",{minimumFractionDigits:2}); }
+function nowStamp(){ const d=new Date(); return d.toLocaleTimeString("en-IN",{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+
+function loadCases(){
+  try{
+    cases = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    setSaveState("ok", cases.length ? cases.length+" case(s) loaded" : "ready · no data yet");
+  }catch(e){
+    cases = [];
+    setSaveState("err", "local storage unavailable");
+  }
+  renderStats();
+}
+
+function persist(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cases));
+    setSaveState("ok", "saved · " + nowStamp());
+    return true;
+  }catch(e){
+    setSaveState("err", "SAVE FAILED — export a backup");
+    toast("⚠️ Save failed — export a backup now.");
+    return false;
+  }
+}
+
+function verifyStorage(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    if(stored.length === cases.length){
+      toast(`✅ Verified: ${stored.length} case(s) confirmed in local storage`);
+      setSaveState("ok","verified · " + nowStamp());
+    }else{
+      toast(`⚠️ Mismatch: ${stored.length} in storage vs ${cases.length} here`);
+      setSaveState("err","mismatch — back up now");
+    }
+  }catch(e){
+    toast("⚠️ Could not verify — export a backup now");
+    setSaveState("err","verify failed");
+  }
+}
+
+function calcTotal(prefix){
+  const tax = parseFloat(document.getElementById(prefix+"-tax").value) || 0;
+  const nontax = parseFloat(document.getElementById(prefix+"-nontax").value) || 0;
+  document.getElementById(prefix+"-total-display").textContent = fmtAmt(tax+nontax);
+}
+
+function goTo(s){
+  document.querySelectorAll(".screen").forEach(el=>el.classList.remove("active"));
+  document.getElementById("screen-"+s).classList.add("active");
+  window.scrollTo(0,0);
+  if(s==="home") renderStats();
+  if(s==="list") renderList();
+  if(s==="add") resetAddForm();
+}
+
+function renderStats(){
+  document.getElementById("stat-count").textContent = cases.length;
+  const total = cases.reduce((s,c)=>s+(parseFloat(c.total)||0),0);
+  const taxable = cases.reduce((s,c)=>s+(parseFloat(c.tax)||0),0);
+  document.getElementById("stat-total").textContent = "₹"+total.toLocaleString("en-IN",{maximumFractionDigits:0});
+  document.getElementById("stat-taxable").textContent = "₹"+taxable.toLocaleString("en-IN",{maximumFractionDigits:0});
+  const rem = document.getElementById("backup-reminder");
+  if(rem) rem.textContent = cases.length ? `${cases.length} case(s) logged · remember to back up` : "No cases logged yet";
+}
+
+function setSort(s, btn){
+  currentSort = s;
+  document.querySelectorAll(".f-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  renderList();
+}
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function renderMonthlySummary(){
+  const el = document.getElementById("monthly-summary");
+  if(!cases.length){ el.innerHTML = ""; return; }
+  const groups = {};
+  cases.forEach(c=>{
+    const ym = (c.date||"").slice(0,7); // YYYY-MM
+    const key = ym || "undated";
+    if(!groups[key]) groups[key] = { tax:0, nontax:0, total:0, share:0, count:0 };
+    groups[key].tax += parseFloat(c.tax)||0;
+    groups[key].nontax += parseFloat(c.nontax)||0;
+    groups[key].total += parseFloat(c.total)||0;
+    groups[key].share += parseFloat(c.share)||0;
+    groups[key].count += 1;
+  });
+  const keys = Object.keys(groups).sort((a,b)=> b.localeCompare(a));
+  el.innerHTML = `<div class="month-summary">
+    <div class="month-summary-title">Monthly Totals</div>
+    ${keys.map(k=>{
+      let label = "Undated";
+      if(k!=="undated"){
+        const [y,m] = k.split("-");
+        label = `${MONTH_NAMES[parseInt(m)-1]} ${y}`;
+      }
+      const g = groups[k];
+      return `<div class="month-row">
+        <div class="month-row-hdr"><span>${label}</span><span class="mcount">${g.count} case${g.count!==1?"s":""}</span></div>
+        <div class="month-cols">
+          <div><span>Taxable</span>${fmtAmt(g.tax)}</div>
+          <div><span>Non-taxable</span>${fmtAmt(g.nontax)}</div>
+          <div><span>Share</span>${fmtAmt(g.share)}</div>
+        </div>
+      </div>`;
+    }).join("")}
+  </div>`;
+}
+
+function renderList(){
+  document.getElementById("list-title").textContent = `Ledger (${cases.length})`;
+  renderMonthlySummary();
+  const el = document.getElementById("entries-list");
+  if(!cases.length){
+    el.innerHTML = '<div class="empty"><div class="empty-sig">— · —</div>No cases logged yet</div>';
+    return;
+  }
+  let sorted = [...cases];
+  if(currentSort==="date") sorted.sort((a,b)=> (b.date||"").localeCompare(a.date||""));
+  if(currentSort==="name") sorted.sort((a,b)=> (a.name||"").localeCompare(b.name||""));
+  if(currentSort==="total") sorted.sort((a,b)=> (parseFloat(b.total)||0)-(parseFloat(a.total)||0));
+
+  el.innerHTML = sorted.map(c=>`
+    <div class="entry">
+      <div class="entry-top">
+        <div>
+          <div class="entry-name">${esc(c.name||"Unnamed")}</div>
+          <div class="entry-date">${c.date||"—"} · ID ${esc(c.id||"—")} · Inv ${esc(c.inv||"—")}</div>
+        </div>
+        <div class="entry-total">${fmtAmt(c.total)}</div>
+      </div>
+      <div class="entry-meta">
+        <div><span class="lbl">Taxable</span>${fmtAmt(c.tax)}</div>
+        <div><span class="lbl">Non-taxable</span>${fmtAmt(c.nontax)}</div>
+      </div>
+      ${c.share ? `<div class="entry-share">Share: ${fmtAmt(c.share)}</div>` : ""}
+      <button class="edit-btn" onclick="openEdit('${c.key}')">✏️ Edit</button>
+    </div>
+  `).join("");
+}
+
+function resetAddForm(){
+  ["f-date","f-name","f-id","f-inv","f-tax","f-nontax","f-share"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f-total-display").textContent="₹0.00";
+  document.getElementById("add-error").style.display="none";
+  document.getElementById("f-date").value = new Date().toISOString().slice(0,10);
+}
+
+async function saveCase(){
+  const name = document.getElementById("f-name").value.trim();
+  if(!name){
+    const eb=document.getElementById("add-error");
+    eb.textContent="Please enter a name."; eb.style.display="block";
+    return;
+  }
+  const tax = parseFloat(document.getElementById("f-tax").value)||0;
+  const nontax = parseFloat(document.getElementById("f-nontax").value)||0;
+  const entry = {
+    key: Date.now().toString(),
+    date: document.getElementById("f-date").value,
+    name: name,
+    id: document.getElementById("f-id").value,
+    inv: document.getElementById("f-inv").value,
+    tax: tax,
+    nontax: nontax,
+    total: tax+nontax,
+    share: parseFloat(document.getElementById("f-share").value) || 0
+  };
+  cases.unshift(entry);
+  const ok = persist();
+  renderStats();
+  if(ok){ toast(`✅ Saved · ${cases.length} case(s) in ledger`); goTo("home"); }
+}
+
+function openEdit(key){
+  const c = cases.find(x=>x.key===key);
+  if(!c) return;
+  document.getElementById("e-key").value = key;
+  document.getElementById("e-date").value = c.date||"";
+  document.getElementById("e-name").value = c.name||"";
+  document.getElementById("e-id").value = c.id||"";
+  document.getElementById("e-inv").value = c.inv||"";
+  document.getElementById("e-tax").value = c.tax||"";
+  document.getElementById("e-nontax").value = c.nontax||"";
+  document.getElementById("e-total-display").textContent = fmtAmt(c.total);
+  document.getElementById("e-share").value = c.share||0;
+  goTo("edit");
+}
+
+async function saveEdit(){
+  const key = document.getElementById("e-key").value;
+  const idx = cases.findIndex(c=>c.key===key);
+  if(idx===-1) return;
+  const tax = parseFloat(document.getElementById("e-tax").value)||0;
+  const nontax = parseFloat(document.getElementById("e-nontax").value)||0;
+  cases[idx] = {
+    ...cases[idx],
+    date: document.getElementById("e-date").value,
+    name: document.getElementById("e-name").value,
+    id: document.getElementById("e-id").value,
+    inv: document.getElementById("e-inv").value,
+    tax: tax, nontax: nontax, total: tax+nontax,
+    share: parseFloat(document.getElementById("e-share").value) || 0
+  };
+  const ok = persist();
+  if(ok){ toast("✅ Saved and confirmed"); goTo("list"); }
+}
+
+async function deleteCase(){
+  if(!confirm("Delete this case? This cannot be undone.")) return;
+  const key = document.getElementById("e-key").value;
+  cases = cases.filter(c=>c.key!==key);
+  persist();
+  toast("Deleted.");
+  goTo("list");
+}
+
+function exportJSON(){
+  if(!cases.length){ toast("No cases yet."); return; }
+  const blob = new Blob([JSON.stringify({exported:new Date().toISOString(),cases},null,2)],{type:"application/json"});
+  dl(blob, `goodvet-ledger-${new Date().toISOString().slice(0,10)}.json`);
+  toast(`✅ ${cases.length} cases backed up`);
+}
+function exportCSV(){
+  if(!cases.length){ toast("No cases yet."); return; }
+  const h = ["Date","Name","ID","Inv No","Taxable Volume","Non-taxable","Total","Share"];
+  const rows = cases.map(c=>[c.date||"",c.name||"",c.id||"",c.inv||"",c.tax,c.nontax,c.total,c.share||""]
+    .map(v=>`"${String(v).replace(/"/g,'""')}"`).join(","));
+  const blob = new Blob(["\uFEFF"+[h.join(","),...rows].join("\r\n")],{type:"text/csv;charset=utf-8"});
+  dl(blob, `goodvet-ledger-${new Date().toISOString().slice(0,10)}.csv`);
+  toast("✅ CSV exported");
+}
+async function importJSON(e){
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = (ev)=>{
+    try{
+      const d = JSON.parse(ev.target.result);
+      const imp = Array.isArray(d) ? d : (d.cases||[]);
+      const keys = new Set(cases.map(c=>c.key));
+      const added = imp.filter(c=>!keys.has(c.key));
+      cases = [...added, ...cases];
+      persist();
+      renderStats();
+      toast(`✅ Imported ${added.length} case(s)`);
+    }catch{ toast("⚠️ Invalid backup file"); }
+    e.target.value="";
+  };
+  r.readAsText(file);
+}
+function dl(blob,name){ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); }
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); }
+
+// init
+resetAddForm();
+loadCases();
+</script>
+</body>
+</html>
